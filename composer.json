@@ -1,6 +1,6 @@
 {
-  "name": "udx/wp-stateless-gravity-forms-signature-addon",
-  "description": "Ensures compatibility with Gravity Forms Signature",
+  "name": "udx/wp-stateless-siteorigin-css-addon",
+  "description": "Ensures compatibility with SiteOrigin CSS",
   "type": "wordpress-plugin",
   "license": "MIT",
   "authors": [

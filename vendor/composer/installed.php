@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
-        'name' => 'udx/wp-stateless-gravity-forms-signature-addon',
+        'name' => 'udx/wp-stateless-siteorigin-css-addon',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'ed4fd9cf6c24aa88709510f2b58d7ea11b5eca19',
+        'reference' => 'c8c7d0418025bcdf76451fabe4120fd0b54adfe0',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -316,10 +316,10 @@
             'aliases' => array(),
             'dev_requirement' => true,
         ),
-        'udx/wp-stateless-gravity-forms-signature-addon' => array(
+        'udx/wp-stateless-siteorigin-css-addon' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'ed4fd9cf6c24aa88709510f2b58d7ea11b5eca19',
+            'reference' => 'c8c7d0418025bcdf76451fabe4120fd0b54adfe0',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

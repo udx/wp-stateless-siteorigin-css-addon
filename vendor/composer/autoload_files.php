@@ -11,5 +11,5 @@ return array(
     '6124b4c8570aa390c21fafd04a26c69f' => $vendorDir . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
     '051bafe20e2674435a162870efa2d2a7' => $vendorDir . '/brain/monkey/inc/api.php',
     'ec07570ca5a812141189b1fa81503674' => $vendorDir . '/phpunit/phpunit/src/Framework/Assert/Functions.php',
-    'b5b3fe9b3be70904270d822287a4559b' => $baseDir . '/class-siteorigin-css.php',
+    '9a5806c9fe7004ebc3462b38090f6d3f' => $baseDir . '/class-siteorigin-css.php',
 );
