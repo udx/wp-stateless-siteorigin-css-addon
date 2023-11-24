@@ -1,7 +1,7 @@
 === WP-Stateless - SiteOrigin CSS Addon ===
 Contributors: usability_dynamics, andypotanin, ideric, maxim.peshkov, planvova, obolgun
 Donate link: https://udx.io
-Tags: siteorigin, css, customize, google, google cloud, google cloud storage, cdn, uploads, media, stateless, backup, siteorigin, css editor, customize design, visual css
+Tags: siteorigin, css editor, customize design, visual css, google, google cloud, google cloud storage, cdn, uploads, media, stateless, backup
 License: GPLv2 or later
 Requires PHP: 8.0
 Requires at least: 5.0
