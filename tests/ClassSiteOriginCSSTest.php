@@ -1,6 +1,6 @@
 <?php
 
-namespace WPSL\SiteOriginCSS;
+namespace SLCA\SiteOriginCSS;
 
 use PHPUnit\Framework\TestCase;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
@@ -34,6 +34,7 @@ class ClassSiteOriginCSSTest extends TestCase {
 
     // WP mocks
     Functions\when('wp_upload_dir')->justReturn( self::TEST_UPLOAD_DIR );
+    Functions\when('check_admin_referer')->justReturn( true );
         
     // WP_Stateless mocks
     Filters\expectApplied('wp_stateless_file_name')
