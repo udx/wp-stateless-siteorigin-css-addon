@@ -37,9 +37,6 @@ class ClassSiteOriginCSSTest extends TestCase {
     Functions\when('check_admin_referer')->justReturn( true );
         
     // WP_Stateless mocks
-    Filters\expectApplied('wp_stateless_file_name')
-      ->andReturn( self::TEST_FILE );
-
     Functions\when('ud_get_stateless_media')->justReturn( WPStatelessStub::instance() );
   }
 	
@@ -53,19 +50,32 @@ class ClassSiteOriginCSSTest extends TestCase {
 
     $siteOriginCSS->module_init([]);
 
+    self::assertNotFalse( has_filter('siteorigin_custom_css_file', [ $siteOriginCSS, 'get_custom_css_file' ]) );
+    self::assertNotFalse( has_filter('set_url_scheme', [ $siteOriginCSS, 'set_url_scheme' ]) );
+    self::assertNotFalse( has_filter('sm:sync::syncArgs', [ $siteOriginCSS, 'sync_args' ]) );
+    self::assertNotFalse( has_filter('sm:sync::nonMediaFiles', [ $siteOriginCSS, 'get_sync_files' ]) );
     self::assertNotFalse( has_filter('set_url_scheme', [ $siteOriginCSS, 'set_url_scheme' ]) );
     self::assertNotFalse( has_action('admin_menu', [ $siteOriginCSS, 'action_admin_menu' ]) );
   }
 
-  public function testShouldSaveFieldValue() {
+  public function testShouldRewriteURL() {
     $siteOriginCSS = new SiteOriginCSS();
 
     Actions\expectDone('sm:sync::syncFile')->once();
+    Filters\expectApplied('wp_stateless_addon_files_root')->once();
+    Filters\expectApplied('wp_stateless_file_name')->once();
 
-    $this->assertEquals(
-      self::DST_URL,
-      $siteOriginCSS->set_url_scheme(self::SRC_URL, null, null) 
-    );
+    $siteOriginCSS->set_url_scheme(self::SRC_URL, null, null);
+  }
+
+  public function testShouldNotRewriteURL() {
+    $siteOriginCSS = new SiteOriginCSS();
+
+    $siteOriginCSS->set_url_scheme(self::TEST_URL, null, null);
+
+    $this->assertSame( 0, did_action('sm:sync::syncFile') );
+    $this->assertSame( 0, Filters\applied('wp_stateless_addon_files_root') );
+    $this->assertSame( 0, Filters\applied('wp_stateless_file_name') );
   }
 
   public function testShouldDeleteCssFile() {
@@ -76,9 +86,43 @@ class ClassSiteOriginCSSTest extends TestCase {
     $_POST['siteorigin_custom_css_save'] = true;
 
     Actions\expectDone('sm:sync::deleteFiles')->once();
+    Filters\expectApplied('wp_stateless_file_name')->once();
 
     $siteOriginCSS->action_admin_menu();
 
     self::assertTrue(true);
+  }
+
+  public function testShouldUpdateArgs() {
+    $siteOriginCSS = new SiteOriginCSS();
+
+    $args = $siteOriginCSS->sync_args([], self::TEST_FILE, '', false);
+
+    self::assertTrue( isset( $args['source'] ) );
+    self::assertTrue( isset( $args['source_version'] ) );
+    self::assertEquals( 'SiteOrigin CSS', $args['source'] );
+    self::assertFalse( isset( $args['name_with_root'] ) );
+  }
+
+  public function testShouldUpdateArgsStateless() {
+    $siteOriginCSS = new SiteOriginCSS();
+
+    ud_get_stateless_media()->set('sm.mode', 'stateless');
+
+    $args = $siteOriginCSS->sync_args([], self::TEST_FILE, '', false);
+
+    self::assertTrue( isset( $args['source'] ) );
+    self::assertTrue( isset( $args['source_version'] ) );
+    self::assertEquals( 'SiteOrigin CSS', $args['source'] );
+    self::assertTrue( isset( $args['name_with_root'] ) );
+  }
+
+  public function testShouldNotUpdateArgs() {
+    $siteOriginCSS = new SiteOriginCSS();
+
+    self::assertEquals(
+      0,
+      count( $siteOriginCSS->sync_args([], self::TEST_URL, '', false) )
+    );
   }
 }

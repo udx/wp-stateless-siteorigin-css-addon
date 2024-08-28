@@ -5,7 +5,7 @@ Tags: siteorigin css, siteorigin css addon extension, google cloud storage, stat
 License: GPLv2 or later
 Requires PHP: 8.0
 Requires at least: 5.0
-Tested up to: 6.4.3
+Tested up to: 6.6.1
 Stable tag: 0.0.1
 
 Provides compatibility between the SiteOrigin CSS and the WP-Stateless plugins.
@@ -20,7 +20,7 @@ Provides compatibility between the [SiteOrigin CSS](https://wordpress.org/plugin
 
 = Notes =
 
-* Tested with SiteOrigin CSS plugin version 1.5.9
+* Tested with SiteOrigin CSS plugin version 1.5.11
 
 = Support, Feedback, & Contribute =
 
