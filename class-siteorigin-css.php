@@ -3,11 +3,15 @@
 namespace SLCA\SiteOriginCSS;
 
 use wpCloud\StatelessMedia\Compatibility;
+use wpCloud\StatelessMedia\Helper;
+use wpCloud\StatelessMedia\Utility;
 
 /**
  * Class SiteOriginCSS
  */
 class SiteOriginCSS extends Compatibility {
+  const STORAGE_PATH = 'so-css/';
+
   protected $id = 'so-css';
   protected $title = 'SiteOrigin CSS';
   protected $constant = 'WP_STATELESS_COMPATIBILITY_SOCSS';
@@ -18,8 +22,21 @@ class SiteOriginCSS extends Compatibility {
    * @param $sm
    */
   public function module_init($sm) {
+    add_filter('siteorigin_custom_css_file', array($this, 'get_custom_css_file'), 20, 1);
     add_filter('set_url_scheme', array($this, 'set_url_scheme'), 20, 3);
     add_action('admin_menu', array($this, 'action_admin_menu'), 3);
+    add_filter('sm:sync::syncArgs', array($this, 'sync_args'), 10, 4);
+    add_filter('sm:sync::nonMediaFiles', array($this, 'get_sync_files'), 20);
+  }
+
+  /**
+   * Get the position of 'so-css/' dir in the filename.
+   * 
+   * @param $name
+   * @return bool
+   */
+  protected function get_so_css($name) {
+    return strpos($name, self::STORAGE_PATH);
   }
 
   /**
@@ -30,16 +47,24 @@ class SiteOriginCSS extends Compatibility {
    * @return string
    */
   public function set_url_scheme($url, $scheme, $orig_scheme) {
-    $position = strpos($url, 'so-css/');
-    if ($position !== false) {
-      $upload_data = wp_upload_dir();
+    $position = $this->get_so_css($url);
+    
+    if ( $position !== false ) {
       $name = substr($url, $position);
+
+      $upload_data = wp_upload_dir();
       // We need to get the absolute path before adding the bucket dir to name.
-      $absolutePath = $upload_data['basedir'] . '/' . $name;
+      $absolutePath = apply_filters('wp_stateless_addon_files_root', ''); 
+
+      $absolutePath .= '/' . $name;
+
       $name = apply_filters('wp_stateless_file_name', $name, 0);
+
       do_action('sm:sync::syncFile', $name, $absolutePath);
+
       $url = ud_get_stateless_media()->get_gs_host() . '/' . $name;
     }
+
     return $url;
   }
 
@@ -56,5 +81,151 @@ class SiteOriginCSS extends Compatibility {
       } catch (\Throwable $e) {
       }
     }
+  }
+
+  /**
+   * Get custom CSS params.
+   * 'siteorigin_custom_css_file' hook doesn't pass the $theme and $post_id, so we need to get them from the backtrace.
+   */
+  protected function get_custom_css_params() {
+    $theme = null;
+    $post_id = null;
+
+    $functions = [
+      'get_custom_css',
+      'save_custom_css_file',
+      'enqueue_custom_css',
+    ];
+
+    $backtrace = debug_backtrace();
+
+    foreach ( $backtrace as $trace ) {
+      if ( !isset( $trace['function'] ) || !isset( $trace['class'] ) 
+        || $trace['class'] !== 'SiteOrigin_CSS' || !in_array( $trace['function'], $functions ) ) {
+        continue;
+      }
+
+      $args = $trace['args'] ?? [];
+
+      switch( $trace['function'] ) {
+        case 'save_custom_css_file':
+          $theme = $args[1] ?? null;
+          $post_id = $args[2] ?? null;
+          break;
+        default:
+          $theme = $args[0] ?? null;
+          $post_id = $args[1] ?? null;
+      }
+    }
+
+    return [$theme, $post_id];
+  }
+
+  /**
+   * Get custom CSS file name. Create a file if it doesn't exist to make it accessible.
+   * 
+   * @param string $custom_css_file
+   * @return array
+   */
+  public function get_custom_css_file($custom_css_file) {
+    if ( !ud_get_stateless_media()->is_mode('stateless') ) {
+      return $custom_css_file;
+    }
+
+    if ( class_exists('\SiteOrigin_CSS') ) {
+      $so_css = \SiteOrigin_CSS::single();
+
+      if ( $so_css ) {
+        list($theme, $post_id) = $this->get_custom_css_params();
+
+        $filename = $so_css->get_css_file_name( $theme, $post_id );
+
+        $position = $this->get_so_css($filename);
+
+        if ( $position === false ) {
+          return $custom_css_file;
+        }
+
+        $name = substr($filename, $position);
+
+        $custom_css_file['file'] = ud_get_stateless_media()->get_gs_path() . '/' . $name;
+        $custom_css_file['url'] = ud_get_stateless_media()->get_gs_host() . '/' . $name;
+
+        if ( !class_exists('\WP_Filesystem_Direct') ) {
+          require_once(ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php');
+          require_once(ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php');
+        }
+    
+        $filesystem = new \WP_Filesystem_Direct( false );
+
+        if ( !$filesystem->exists($custom_css_file['file']) ) {
+          $filesystem->put_contents( $custom_css_file['file'], ' ' );
+        }
+      }
+    }
+
+    return $custom_css_file;
+  }
+
+  /**
+   * Update args when uploading/syncing file to GCS.
+   * 
+   * @param array $args
+   * @param string $name
+   * @param string $file
+   * @param bool $force
+   * 
+   * @return array
+   */
+  public function sync_args($args, $name, $file, $force) {
+    if ( $this->get_so_css($name) !== 0 ) {
+      return $args;
+    }
+
+    if ( ud_get_stateless_media()->is_mode('stateless') ) {
+      $args['name_with_root'] = false;
+    }
+
+    $args['source'] = 'SiteOrigin CSS';
+    $args['source_version'] = defined('SOCSS_VERSION') ? SOCSS_VERSION : '';
+
+    return $args;
+  }
+
+  /**
+   * Get the list of files to sync.
+   * 
+   * @param array $file_list
+   * @return array
+   */
+  public function get_sync_files($file_list) {
+    if ( !method_exists('\wpCloud\StatelessMedia\Utility', 'get_files') ) {
+      Helper::log('WP-Stateless version too old, please update.');
+
+      return $file_list;
+    }
+
+    $dir = apply_filters('wp_stateless_addon_sync_files_path', '', self::STORAGE_PATH); 
+
+    if (is_dir($dir)) {
+      // Getting all the files from dir recursively.
+      $files = Utility::get_files($dir);
+
+      // validating and adding to the $files array.
+      foreach ($files as $file) {
+        if (!file_exists($file)) {
+          continue;
+        }
+
+        $file = self::STORAGE_PATH . str_replace( $dir, '', wp_normalize_path($file) );
+        $file = trim($file, '/');
+
+        if ( !in_array($file, $file_list) ) {
+          $file_list[] = $file;
+        }
+      }
+    }
+      
+    return $file_list;
   }
 }
