@@ -8,7 +8,7 @@ Provides compatibility between the [SiteOrigin CSS](https://wordpress.org/plugin
 
 ### Notes
 
-* Tested with SiteOrigin CSS plugin version 1.5.9
+* Tested with SiteOrigin CSS plugin version 1.5.11
 
 ### Support, Feedback, & Contribute
 
